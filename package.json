@@ -1,0 +1,10 @@
+{
+  "name": "capcut-playstore-metadata",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Public CapCut Play Store version metadata for capcutmod.win",
+  "engines": {"node": ">=22"},
+  "scripts": {"update": "node scripts/update-metadata.mjs", "test": "node --test"},
+  "dependencies": {"google-play-scraper": "10.1.4"}
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "appId": "com.lemon.lvoverseas",
+  "source": {
+    "url": "https://play.google.com/store/apps/details?id=com.lemon.lvoverseas&hl=en&gl=us",
+    "country": "us",
+    "language": "en"
+  },
+  "current": {
+    "version": "20.2.0",
+    "updatedDate": "2026-11-21"
+  },
+  "previous": {
+    "version": "16.9.0",
+    "updatedDate": "2026-03-05"
+  },
+  "currentOrigin": "observed-playstore",
+  "previousOrigin": "existing-website",
+  "checkedAt": "2026-11-22T12:50:39.595Z"
+}

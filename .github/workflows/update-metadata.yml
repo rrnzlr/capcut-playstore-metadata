@@ -1,0 +1,95 @@
+name: Update Play Store metadata
+
+on:
+  schedule:
+    # UTC; avoid the busiest start-of-hour scheduling window.
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions: {}
+
+# Shared with keep-alive.yml so the two workflows cannot race a main-branch push.
+concurrency:
+  group: metadata-repository-maintenance
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.repository == 'rrnzlr/capcut-playstore-metadata'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the current default branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Test metadata validation and version history
+        run: npm test
+
+      - name: Read CapCut's published Play Store information
+        # On failure the script exits without overwriting capcut.json.
+        # A failed build also leaves the existing Pages deployment untouched.
+        run: npm run update
+
+      - name: Save the checked metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- capcut.json
+          if git diff --cached --quiet -- capcut.json; then
+            echo 'The saved metadata is unchanged.'
+          else
+            git commit -m 'chore: refresh Play Store metadata'
+            git push origin HEAD:main
+          fi
+
+      - name: Prepare the public metadata endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp capcut.json _site/capcut.json
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CapCut Play Store metadata</title></head><body><p><a href="capcut.json">CapCut Play Store metadata</a></p></body></html>
+          HTML
+
+      - name: Upload the metadata site
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+          retention-days: 1
+
+  deploy:
+    needs: refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Read the configured Pages site
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Deploy the public metadata endpoint
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

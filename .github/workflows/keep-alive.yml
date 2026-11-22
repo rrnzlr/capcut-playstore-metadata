@@ -1,0 +1,67 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # A daily elapsed-time check produces a commit every 15 days, including
+    # across month boundaries; a day-of-month */15 cron would not do that.
+    - cron: '47 3 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Create an empty keep-alive commit now
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: metadata-repository-maintenance
+  cancel-in-progress: false
+
+jobs:
+  keep-alive:
+    if: github.repository == 'rrnzlr/capcut-playstore-metadata'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Check out main and its keep-alive history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Make an empty commit after 15 days
+        shell: bash
+        env:
+          FORCE_KEEP_ALIVE: ${{ inputs.force || false }}
+          KEEP_ALIVE_SUBJECT: 'chore: keep scheduled workflows active'
+        run: |
+          set -euo pipefail
+          last_keep_alive=$(git log --format=%ct -1 --grep="^${KEEP_ALIVE_SUBJECT}$")
+          if [[ -z "$last_keep_alive" ]]; then
+            last_keep_alive=$(git log --format=%ct --reverse | sed -n '1p')
+          fi
+          if [[ ! "$last_keep_alive" =~ ^[0-9]+$ ]]; then
+            echo 'Could not determine the repository activity baseline.' >&2
+            exit 1
+          fi
+          now=$(date -u +%s)
+          elapsed=$((now - last_keep_alive))
+          interval=$((15 * 24 * 60 * 60))
+          if [[ "$FORCE_KEEP_ALIVE" != 'true' && "$elapsed" -lt "$interval" ]]; then
+            printf 'Keep-alive not due: %s of 15 days elapsed.\n' "$((elapsed / 86400))" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo 'The checkout must be clean before making an empty commit.' >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --allow-empty -m "$KEEP_ALIVE_SUBJECT"
+          git push origin HEAD:main
+          printf 'Created empty keep-alive commit `%s`.\n' "$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          printf 'GitHub schedules remain subject to GitHub availability and repository policies.\n' >> "$GITHUB_STEP_SUMMARY"
