@@ -10,14 +10,32 @@ const NOW = Date.parse('2026-11-22T10:00:00Z');
 const app = (version = '20.2.0', date = '2026-11-21T03:38:27Z') => ({appId: APP_ID, version, updated: Date.parse(date)});
 const current = () => reconcileMetadata(app(), undefined, NOW);
 
-test('fresh Play Store data migrates the known website version with explicit provenance', () => {
+test('fresh Play Store data uses the requested previous display without inventing its date', () => {
   const metadata = current();
   assert.deepEqual(metadata.current, {version: '20.2.0', updatedDate: '2026-11-21'});
-  assert.deepEqual(metadata.previous, {version: '16.9.0', updatedDate: '2026-03-05'});
-  assert.equal(metadata.previousOrigin, 'existing-website');
+  assert.deepEqual(metadata.previous, {version: '20.1.0', updatedDate: null});
+  assert.equal(metadata.previousOrigin, 'manual-display');
   assert.equal(metadata.currentOrigin, 'observed-playstore');
   assert.deepEqual(metadata.source, SOURCE);
   validateMetadata(metadata, {now: NOW});
+});
+
+test('the manual previous display cannot become current or claim observed history with no date', () => {
+  const metadata = current();
+  assert.throws(() => validateMetadata({...metadata, current: {version: '20.2.0', updatedDate: null}}, {now: NOW}));
+  assert.throws(() => validateMetadata({...metadata, previousOrigin: 'observed-playstore'}, {now: NOW}));
+  assert.throws(() => validateMetadata({...metadata, previousOrigin: 'existing-website'}, {now: NOW}));
+  assert.throws(() => validateMetadata({...metadata, currentOrigin: 'manual-display'}, {now: NOW}));
+  assert.throws(() => validateMetadata({...metadata, previous: {version: '20.1.0'}}, {now: NOW}));
+  assert.throws(() => validateMetadata({...metadata, previous: {version: '20.1.0', updatedDate: '2026-02-30'}}, {now: NOW}));
+});
+
+test('fresh source at or below the manual display version omits the previous label', () => {
+  for (const version of ['20.1.0', '20.0.0']) {
+    const metadata = reconcileMetadata(app(version), undefined, NOW);
+    assert.equal(metadata.previous, null);
+    assert.equal(metadata.previousOrigin, undefined);
+  }
 });
 
 test('an observed new release shifts the complete old current record to previous', () => {
