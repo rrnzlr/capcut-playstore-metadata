@@ -4,6 +4,15 @@ This repository publishes a small public `capcut.json` record for the homepage a
 
 The automation updates display information only. It does not upload, replace, inspect or download the hosted APK. Both website download buttons retain their existing APK link. The second button's version is a visual history label.
 
+## Automation and public endpoint
+
+The published JSON is available at [rrnzlr.github.io/capcut-playstore-metadata/capcut.json](https://rrnzlr.github.io/capcut-playstore-metadata/capcut.json). The Blogger theme reads it on the homepage and Download page and caches valid values for five minutes.
+
+- **Update Play Store metadata** runs every six hours, at minute 17 UTC, and can be started manually from the repository's Actions tab. It validates the source, commits changed metadata and publishes the JSON through GitHub Pages. An unchanged successful check creates no commit.
+- **Keep Alive** checks daily at 03:47 UTC and makes a genuine empty commit after 15 days have elapsed since the previous keep-alive commit. A manual run can use `force` to test it immediately. This is an elapsed-time check, so month boundaries do not shorten the interval. GitHub controls scheduled-run availability and inactivity policies.
+
+Both workflows use the repository's built-in `GITHUB_TOKEN`; no personal token or Blogger credentials are required. Only metadata is included in the Pages artifact.
+
 ## Local commands
 
 Use Node.js 22 or later:
