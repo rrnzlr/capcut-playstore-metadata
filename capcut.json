@@ -7,14 +7,14 @@
     "language": "en"
   },
   "current": {
-    "version": "20.2.0",
+    "version": "20.3.0",
     "updatedDate": "2026-11-23"
   },
   "previous": {
-    "version": "20.1.0",
-    "updatedDate": null
+    "version": "20.2.0",
+    "updatedDate": "2026-11-23"
   },
   "currentOrigin": "observed-playstore",
-  "previousOrigin": "manual-display",
-  "checkedAt": "2026-11-23T19:13:49.657Z"
+  "previousOrigin": "observed-playstore",
+  "checkedAt": "2026-11-24T13:28:51.020Z"
 }
