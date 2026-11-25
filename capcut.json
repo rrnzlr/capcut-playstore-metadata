@@ -8,7 +8,7 @@
   },
   "current": {
     "version": "20.3.0",
-    "updatedDate": "2026-11-23"
+    "updatedDate": "2026-11-25"
   },
   "previous": {
     "version": "20.2.0",
@@ -16,5 +16,5 @@
   },
   "currentOrigin": "observed-playstore",
   "previousOrigin": "observed-playstore",
-  "checkedAt": "2026-11-24T13:28:51.020Z"
+  "checkedAt": "2026-11-25T19:06:13.652Z"
 }
